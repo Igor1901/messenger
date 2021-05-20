@@ -9,12 +9,19 @@
         <h1>WebSocket Chat</h1>
         <form class="menu" action="" onsubmit="sendMessage(event)">
             <label>Item ID: <input type="text" id="itemId" autocomplete="off" value=""/></label>
-            <label>Token: <input type="text" id="token" autocomplete="off" value=""/></label>
+            <label>Name: <input type="text" id="token" autocomplete="off" value=""/></label>
             <button id="send-message" onclick="connect(event)">Connect</button>
             <hr>
             <div class="menu__bottom">
                 <label >Message: <input type="text" id="messageText" autocomplete="off"/></label>
                 <button>Send</button>
+
+
+
+                <input id="fileupload" type="file" name="fileupload" />
+                <button id="upload-button" onclick="uploadFile()"> Upload </button>
+
+
             </div>
         </form>
         <div class="messages__window">

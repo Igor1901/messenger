@@ -21,7 +21,7 @@ input, button{
 }
 .menu .menu__bottom{
 	position: absolute;
-	bottom: 20px;
+	bottom: 0.75em;
 	left: 50%;
 	transform: translateX(-50%);
 }
@@ -34,8 +34,7 @@ input, button{
 	max-height: 100%;
 	margin: 0;
 	width: 100%;
-
-
+	padding-left: 0;
 }
 .messages__window{
 	background-color: white;
@@ -52,9 +51,8 @@ input, button{
 	margin: 5px;
 }
 .messages .receiver-message{
-	margin: 5px 0 5px auto;
-
+	margin: 5px auto 5px 0;
 }
 .messages .my-message{
-	margin: 5px auto 5px 0;
+	margin: 5px 0 5px auto;
 }

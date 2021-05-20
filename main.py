@@ -1,6 +1,8 @@
 from typing import Optional, List
+import shutil
+from venv import logger
 
-from fastapi import Cookie, Depends, FastAPI, Query, WebSocket, status
+from fastapi import Cookie, Depends, FastAPI, Query, WebSocket, status, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import json
@@ -22,6 +24,12 @@ async def get_cookie_or_token(
     if session is None and token is None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     return session or token
+
+
+@app.post("/import_file")
+async def import_file_post(file: UploadFile = File(...)):
+    logger.info('post import_file')
+    return {"filename": file.filename}
 
 
 @app.websocket("/items/{item_id}/ws")

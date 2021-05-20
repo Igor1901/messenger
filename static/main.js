@@ -6,12 +6,14 @@ function connect(event) {
     ws = new WebSocket("ws://localhost:8000/items/" + itemId.value + "/ws?token=" + token.value);
     ws.onmessage = function (event) {
         let eventData = JSON.parse(event.data)
+        console.log(eventData)
         var messages = document.getElementById('messages')
         var message = document.createElement('li')
         message.classList.add(eventData.owner === token.value ? "my-message" : "receiver-message")
         var content = document.createTextNode(eventData.text)
         message.appendChild(content)
         messages.appendChild(message)
+        messages.scrollTop = messages.scrollHeight;
     };
     event.preventDefault()
 }
@@ -21,17 +23,14 @@ function sendMessage(event) {
     ws.send(input.value)
     input.value = ''
     event.preventDefault()
-
-    /*const token = document.getElementById('token').value;
-    const messages = document.getElementById('messages').children;
-    for (let i = 0; i < messages.length; i++) {
-        const message = messages[i].textContent;
-        if (message.indexOf(token) !== -1) {
-            messages[i].style.cssText = `
-                margin: 5px 0 5px auto;
-                `;
-        }
-    }*/
-
 }
 
+async function uploadFile() {
+    let formData = new FormData();
+    formData.append("file", fileupload.files[0]);
+    await fetch('/import_file', {
+        method: "POST",
+        body: formData
+  });
+    alert('The file has been uploaded successfully.');
+}
