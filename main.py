@@ -1,50 +1,16 @@
-from typing import Optional, List
-import shutil
-from venv import logger
+import pathlib
+import uuid
+from typing import List
 
-from fastapi import Cookie, Depends, FastAPI, Query, WebSocket, status, File, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+import aiofiles
+from fastapi import Depends, FastAPI, WebSocket, File, UploadFile
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-import json
-app = FastAPI()
-app.mount("/static/", StaticFiles(directory="./static/"))
+from starlette.requests import HTTPConnection
+from starlette.responses import FileResponse
+from starlette.websockets import WebSocketDisconnect
 
-
-
-@app.get("/")
-async def get():
-    return RedirectResponse("/static/index.html")
-
-
-async def get_cookie_or_token(
-    websocket: WebSocket,
-    session: Optional[str] = Cookie(None),
-    token: Optional[str] = Query(None),
-):
-    if session is None and token is None:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-    return session or token
-
-
-@app.post("/import_file")
-async def import_file_post(file: UploadFile = File(...)):
-    logger.info('post import_file')
-    return {"filename": file.filename}
-
-
-@app.websocket("/items/{item_id}/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    item_id: str,
-    q: Optional[int] = None,
-    cookie_or_token: str = Depends(get_cookie_or_token),
-):
-    await manager.connect(websocket)
-    while True:
-        data = await websocket.receive_text()
-        message = json.dumps({"owner": cookie_or_token, "text": f"{cookie_or_token}: {data}"})
-        await manager.broadcast(message)
-
+UPLOADS_DIR = pathlib.Path('./uploads')
 
 class ConnectionManager:
     def __init__(self):
@@ -57,11 +23,67 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
+    async def broadcast(self, message: dict):
         for connection in self.active_connections:
-            await connection.send_text(message)
+            try:
+                await connection.send_json(message)
+            except WebSocketDisconnect:
+                self.disconnect(connection)
 
-manager = ConnectionManager()
+
+app = FastAPI()
+app.mount("/static/", StaticFiles(directory="./static/"))
+app.mount("/uploads/", StaticFiles(directory="./uploads/"))
+
+
+def get_connection_manager(request: HTTPConnection):
+    return request.app.state.conection_manager
+
+
+@app.on_event("startup")
+async def application_startup():
+    UPLOADS_DIR.mkdir(exist_ok=True)
+    app.state.conection_manager = ConnectionManager()
+
+
+@app.get("/")
+async def get():
+    return FileResponse("./static/index.html", media_type="text/html")
+
+
+@app.post("/upload-file/{username}")
+async def upload_file(username: str, file: UploadFile = File(...), manager: ConnectionManager = Depends(get_connection_manager)):
+    file_id = uuid.uuid4()
+    file_extensions = pathlib.Path(file.filename).suffixes
+    filename = pathlib.Path(''.join((str(file_id), *file_extensions)))
+
+    filepath = UPLOADS_DIR / filename
+    async with aiofiles.open(filepath, 'wb') as new_file:
+        await new_file.write(await file.read())
+
+    message_id = str(uuid.uuid4())
+    message_to_broadcast = {
+        "id": message_id,
+        "owner": username,
+        "type": "upload",
+        "content": str(filepath),
+    }
+    await manager.broadcast(message_to_broadcast)
+    return {"id": message_id}
+
+
+@app.websocket("/socket/{username}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    username: str,
+    manager: ConnectionManager = Depends(get_connection_manager),
+):
+    await manager.connect(websocket)
+    async for message in websocket.iter_json():
+        message_to_broadcast = {
+            "id": str(uuid.uuid4()),
+            "owner": username,
+            "type": "text",
+            "content": message["content"],
+        }
+        await manager.broadcast(message_to_broadcast)

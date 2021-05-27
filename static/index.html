@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Chat</title>
-        <link rel="stylesheet" type="text/css" href="/static/styles.css">
-        <script type="text/javascript" src="/static/main.js" async=""></script>
-    </head>
-    <body class="container">
-        <h1>WebSocket Chat</h1>
-        <form class="menu" action="" onsubmit="sendMessage(event)">
-            <label>Item ID: <input type="text" id="itemId" autocomplete="off" value=""/></label>
-            <label>Name: <input type="text" id="token" autocomplete="off" value=""/></label>
-            <button id="send-message" onclick="connect(event)">Connect</button>
-            <hr>
-            <div class="menu__bottom">
-                <label >Message: <input type="text" id="messageText" autocomplete="off"/></label>
-                <button>Send</button>
 
+<head>
+    <title>Chat</title>
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script type="text/javascript" src="/static/main.js" async=""></script>
+</head>
 
+<body class="container">
+    <h1>WebSocket Chat</h1>
+    <div class="menu">
+        <label>Name: <input type="text" id="username" autocomplete="off" value="" /></label>
+        <button onclick="connect()">Connect</button>
 
-                <input id="fileupload" type="file" name="fileupload" />
-                <button id="upload-button" onclick="uploadFile()"> Upload </button>
+        <hr>
+        <div class="menu__bottom">
+            <label>Message: <input type="text" id="message-text" autocomplete="off" /></label>
+            <button onclick=sendMessage()>Send</button>
 
-
-            </div>
-        </form>
-        <div class="messages__window">
-            <ul reversed class="messages" id='messages'>
-            </ul>
+            <input id="file-upload" type="file" />
+            <button id="upload-button" onclick="uploadFile()"> Upload </button>
         </div>
-    </body>
+    </div>
+    <div class="messages__window">
+        <ul reversed class="messages" id='messages'>
+        </ul>
+    </div>
+</body>
+
 </html>

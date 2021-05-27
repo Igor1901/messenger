@@ -56,3 +56,7 @@ input, button{
 .messages .my-message{
 	margin: 5px 0 5px auto;
 }
+
+.messages img {
+	width: 100%;
+}
